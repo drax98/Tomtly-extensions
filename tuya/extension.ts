@@ -39,7 +39,7 @@ function spendExtraRead(): boolean {
   return ++extraReads <= Math.min(300, OPS_TARGET_PER_MINUTE - regular);
 }
 const settings = {
-  devices: { label: "Devices file", type: "file", required: true, secretFields: ["key"], help: "The file `python -m tinytuya wizard` writes, inside your config folder, like secrets/tuya.json. It holds every device's local key." },
+  devices: { label: "Devices file", type: "file", required: true, secretFields: ["key"], help: "The devices.json that `python -m tinytuya wizard` writes. It holds every device's local key, and is kept encrypted." },
   hosts: { label: "Hosts", type: "string", required: true, help: "<device id>=<ip>@<version>, separated by commas, version 3.1 to 3.5. `python -m tinytuya scan` lists all three. A gateway carries its Zigbee and Bluetooth mesh devices. The ip and version may be left out if the devices file has them." },
 } as const;
 
@@ -388,7 +388,7 @@ function colourWrite(d: RawDevice, code: string, value: number): Record<string, 
 defineExtension({
   id: "tuya",
   name: "Smart Life",
-  version: "1.2.2",
+  version: "1.2.3",
   license: "MIT",
   description: "Tuya Zigbee and Wi-Fi devices paired in Smart Life or Tuya Smart, reached directly on your network.",
   categories: ["climate", "lighting", "energy", "sensors", "security"],

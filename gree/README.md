@@ -12,8 +12,8 @@ feature they don't have, so one of these showing doesn't prove the unit has it.
 ## Install
 
 On Tomtly's **Integrations** or **Plugins** page choose **Add**, then **From a GitHub repo**, and give the repository `drax98/tomtly-extensions`, the folder `gree` and
-the version `gree-v1.3.0`. Or list it in `config.json`, as under **Settings** below. Pin a tag: the code you install can't change unless
-you change it.
+the version `gree-v1.3.0`. Then fill in its settings there. Pin a tag: the code you
+install can't change unless you change it.
 
 No credentials are needed. Use the AC's IP address, because broadcast discovery doesn't work from Docker Desktop. For a
 second AC, copy this folder and change its `id`.
@@ -42,10 +42,6 @@ second AC, copy this folder and change its `id`.
 | `host` | The unit's IP address, without a port. Reserve it on your router. Find it in your router's client list. |
 | `mac` | Optional, like `aabbccddeeff`. The unit's MAC address, so it can be found again after an address change without guessing. |
 | `name` | Shown on the card. "Air conditioner" by default. |
-
-```json
-{ "source": "github:drax98/tomtly-extensions/gree@gree-v1.3.0", "settings": { "host": "192.168.1.12" } }
-```
 
 The device id is `gree:<mac>`, so it survives an address change.
 

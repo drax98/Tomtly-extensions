@@ -7,16 +7,17 @@ Wi-Fi device. Device ids are `tuya:<Tuya id>`.
 ## Install
 
 On Tomtly's **Integrations** or **Plugins** page choose **Add**, then **From a GitHub repo**, and give the repository `drax98/tomtly-extensions`, the folder `tuya` and
-the version `tuya-v1.2.2`. Or list it in `config.json`, as under **Settings** below. Pin a tag: the code you install can't change unless
-you change it.
+the version `tuya-v1.2.3`. Then fill in its settings there. Pin a tag: the code you
+install can't change unless you change it.
 
 `devices` comes from the [tinytuya](https://github.com/jasonacox/tinytuya) wizard, which holds every device's local key.
-Fetch it again after re-pairing a device, since re-pairing changes the key:
+Choose that file as **Devices file** when you add it; it is kept encrypted in Tomtly's database, so you can delete your
+copy after. Fetch it again after re-pairing a device, since re-pairing changes the key, and choose it under **Edit settings**:
 
 ```bash
 mkdir -p ~/tuya-lan && docker run --rm -it -v ~/tuya-lan:/app -w /app python:3.12-slim \
   sh -c "pip install -q tinytuya && python -m tinytuya wizard"
-cp ~/tuya-lan/devices.json ~/.config/tomtly/secrets/tuya.json
+# then choose ~/tuya-lan/devices.json on the page
 ```
 
 ## Status
@@ -116,14 +117,11 @@ decrypt. ECB has no nonce, so a recorded reply could be replayed, though what it
 
 | | |
 |---|---|
-| `devices` | Path inside your config folder to what `python -m tinytuya wizard` writes, such as `secrets/tuya.json`. It holds every local key, and each `key` is refused in any output or request. |
+| `devices` | The file `python -m tinytuya wizard` writes, chosen on the page. It holds every local key: Tomtly keeps it encrypted, never shows it again, and refuses each `key` in any output or request. |
 | `hosts` | `<device id>=<ip>@<version>`, separated by commas, with a version from 3.1 to 3.5. The ip and version may be left out if the file has them, as the wizard's file does when its scan found the device. |
 
-`python -m tinytuya scan` lists the id, address and version of what's on your network.
-
-```json
-{ "source": "github:drax98/tomtly-extensions/tuya@tuya-v1.2.2", "settings": { "devices": "secrets/tuya.json", "hosts": "<gateway id>=192.168.1.20@3.4,<plug id>=192.168.1.21@3.3,<other id>" } }
-```
+`python -m tinytuya scan` lists the id, address and version of what's on your network. A `hosts` for a gateway, a plug
+and a device the file already has an address for: `<gateway id>=192.168.1.20@3.4,<plug id>=192.168.1.21@3.3,<other id>`.
 
 **Gateways:** a sub-device (one with a `node_id`) goes to the gateway its `parent` names. With no `parent`, it goes to the
 gateway with the same local key, which is how the wizard itself guesses. Failing that it goes to the first gateway in

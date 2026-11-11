@@ -8,15 +8,16 @@ model offers, see [Access](#access).
 ## Install
 
 On Tomtly's **Integrations** or **Plugins** page choose **Add**, then **From a GitHub repo**, and give the repository `drax98/tomtly-extensions`, the folder `xiaomi` and
-the version `xiaomi-v1.3.3`. Or list it in `config.json`, as under **Settings** below. Pin a tag: the code you install can't change unless
-you change it.
+the version `xiaomi-v1.3.4`. Then fill in its settings there. Pin a tag: the code you
+install can't change unless you change it.
 
 `devices` comes from [Xiaomi-cloud-tokens-extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) and
 holds every device's token and IP. Choose `q` at the prompt, then open `http://127.0.0.1:31415` and scan the QR code with
-the Mi Home app. Fetch it again after re-pairing a device.
+the Mi Home app. Choose the file it writes as **Devices file** when you add it; it is kept encrypted in Tomtly's
+database, so you can delete your copy after. Fetch it again after re-pairing a device, and choose it under **Edit settings**.
 
 ```bash
-docker run --rm -it -p 127.0.0.1:31415:31415 -v ~/.config/tomtly/secrets:/out python:3.11 sh -c '
+docker run --rm -it -p 127.0.0.1:31415:31415 -v ~/xiaomi-tokens:/out python:3.11 sh -c '
   cd /tmp &&
   wget -q https://raw.githubusercontent.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor/c4db715dace9806e905153c2977608873e8ab7c9/token_extractor.py &&
   pip install -q requests pycryptodome charset-normalizer Pillow colorama &&
@@ -125,11 +126,7 @@ With no internet, a model already saved works as usual, and a new one shows as w
 
 | | |
 |---|---|
-| `devices` | A path inside your config folder, like `secrets/xiaomi.json`: the output of [Xiaomi-cloud-tokens-extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). It holds every device's token. |
-
-```json
-{ "source": "github:drax98/tomtly-extensions/xiaomi@xiaomi-v1.3.3", "settings": { "devices": "secrets/xiaomi.json" } }
-```
+| `devices` | The file [Xiaomi-cloud-tokens-extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) writes, chosen on the page. It holds every device's token: Tomtly keeps it encrypted and never shows it again. |
 
 Scripts see a device as `xiaomi:<did>`, so its id survives an address change.
 

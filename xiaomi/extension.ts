@@ -25,7 +25,7 @@ const settings = {
     type: "file",
     required: true,
     secretFields: ["token"],
-    help: "Inside your config folder, like secrets/xiaomi.json: the output of Xiaomi-cloud-tokens-extractor. It holds every device's token.",
+    help: "The file Xiaomi-cloud-tokens-extractor writes. It holds every device's token, and is kept encrypted.",
   },
 } as const;
 
@@ -310,7 +310,7 @@ function fit(ctx: Ctx, devices: ExtensionDevice[]): ExtensionDevice[] {
 defineExtension({
   id: "xiaomi",
   name: "Xiaomi Home",
-  version: "1.3.3",
+  version: "1.3.4",
   license: "MIT",
   description: "Any Xiaomi or Roborock device paired in Mi Home, reached directly on your network. The first time it sees a model, it asks Xiaomi's public miot-spec.org for that model's description.",
   categories: ["cleaning", "climate", "lighting", "sensors"],
