@@ -1,0 +1,16 @@
+{
+  "name": "tomtly-extensions",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --coverage",
+    "typecheck": "for d in */extension.ts; do tsc -p \"$(dirname \"$d\")\" || exit 1; done"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "5.1.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  },
+  "packageManager": "pnpm@11.24.0"
+}
