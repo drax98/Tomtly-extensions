@@ -8,7 +8,7 @@ import { kindOf } from "./categories";
 import { COLOUR_PARTS, colourMax, formatColour, parseColour } from "./colour";
 import { BAD_AUTH, CMD_HEARTBEAT, control, decode, dpsOf, hasSessionKey, negotiate, newSession, nextFrame, proveByRead, sendCommand, statusRead, type Frame, type Session } from "./protocol";
 import { cleanMapping, type Mapping } from "./rules";
-import { valuesOf, writable, readable, declare, colourPoint } from "./values";
+import { valuesOf, writable, readable, declare, colourPoint, deviceRange } from "./values";
 
 const PORT = 6668;
 const DIAL_MS = 2000;
@@ -388,7 +388,7 @@ function colourWrite(d: RawDevice, code: string, value: number): Record<string, 
 defineExtension({
   id: "tuya",
   name: "Smart Life",
-  version: "1.2.3",
+  version: "1.2.4",
   license: "MIT",
   description: "Tuya Zigbee and Wi-Fi devices paired in Smart Life or Tuya Smart, reached directly on your network.",
   categories: ["climate", "lighting", "energy", "sensors", "security"],
@@ -428,7 +428,7 @@ defineExtension({
         kind: kindOf(d.category),
         product: d.product_name,
         online: online[d.id] === true,
-        values: [...Object.keys(d.mapping).sort().map((dp) => declare(d, d.mapping[dp], current[d.id]?.[dp])), ...colourValues(d)],
+        values: deviceRange(d.category, [...Object.keys(d.mapping).sort().map((dp) => declare(d, d.mapping[dp], current[d.id]?.[dp])), ...colourValues(d)], current[d.id]),
       }));
     },
     discover,

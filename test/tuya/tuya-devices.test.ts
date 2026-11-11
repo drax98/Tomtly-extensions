@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { valuesByCode } from "../harness";
+import { deviceRange } from "../../tuya/values";
 
 // The Tuya extension, against a fake device on each protocol. The fake mirrors internal/extension/tuya_ext_test.go (3.4 and
 // 3.5) and tuya_crc_fake_test.go (3.1 to 3.3), but it's driven in-process: the extension writes a frame, the connection's
@@ -78,6 +79,26 @@ describe("tuya: the devices file and hosts setting", () => {
 });
 
 describe("tuya: what devices.poll reports", () => {
+  it("narrows a thermostat's temp_set to the range set on the device (113 and 114), and follows a change to it", async () => {
+    const def = await load();
+    const dev = new TuyaDevice(IP, { version: "3.4", dps: { "cid-th": { "1": true, "2": 210, "3": 205, "113": 10, "114": 25 } } });
+    const host = network([dev], settingsFor(file(...gatewayFile()), `gw1=${IP}@3.4`));
+    run(def, host, 6);
+    expect(valuesByCode(byId(def.devices.poll(host.ctx), "th1")).temp_set).toMatchObject({ min: 100, max: 250, scale: 1, value: 210 });
+  });
+
+  it("keeps the declared range when the device's own is missing, upside down, or past it", () => {
+    const declared: DeviceValue = { code: "temp_set", type: "Integer", writable: true, value: 210, min: 50, max: 300, step: 5, scale: 1 };
+    const range = (category: string, reported?: Record<string, unknown>) => deviceRange(category, [declared], reported)[0];
+    expect(range("wk", { "113": 10, "114": 25 })).toMatchObject({ min: 100, max: 250 });
+    expect(range("wk")).toBe(declared);
+    expect(range("wk", { "113": 10 })).toBe(declared);
+    expect(range("wk", { "113": 25, "114": 10 })).toBe(declared);
+    expect(range("wk", { "113": 5, "114": 35 })).toBe(declared); // 350 is past the declared 300
+    expect(range("wk", { "113": "5", "114": "30" })).toBe(declared);
+    expect(range("kt", { "113": 10, "114": 25 })).toBe(declared);
+  });
+
   it("declares each value in data point order, with its type, writability, range, unit and scale", async () => {
     const def = await load();
     const dev = new TuyaDevice(IP, { version: "3.4", dps: { "cid-th": { "1": true, "2": 210, "3": 205, "4": "auto", "6": 7, "7": { a: 1 }, "8": 2, "10": false } } });

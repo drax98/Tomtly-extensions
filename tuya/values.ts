@@ -33,6 +33,25 @@ export function readable(m: Mapping, values: Record<string, any>, value: unknown
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 }
 
+/**
+ * Thermostats like this home's report the target range set on the device itself, data points 113 (lowest) and 114
+ * (highest) in whole degrees, though the cloud mapping leaves both out. temp_set takes that range, so a slider spans
+ * what the thermostat accepts and follows a change made on it. Without both, or with a range past the declared one,
+ * temp_set stays as declared.
+ * shortcut: 113/114 are this thermostat family's numbers (TS0601); check another wk model's points before trusting them.
+ */
+export function deviceRange(category: string, values: DeviceValue[], reported: Record<string, unknown> | undefined): DeviceValue[] {
+  const lo = reported?.["113"], hi = reported?.["114"];
+  if (category !== "wk" || !Number.isInteger(lo) || !Number.isInteger(hi) || (lo as number) >= (hi as number)) return values;
+  return values.map((v) => {
+    if (v.code !== "temp_set" || v.type !== "Integer") return v;
+    const factor = 10 ** (v.scale ?? 0);
+    const min = (lo as number) * factor, max = (hi as number) * factor;
+    if ((v.min !== undefined && min < v.min) || (v.max !== undefined && max > v.max)) return v;
+    return { ...v, min, max };
+  });
+}
+
 export function declare(d: Mapped, m: Mapping, value: unknown): DeviceValue {
   const known = value === undefined ? null : value;
   const values = valuesOf(m);

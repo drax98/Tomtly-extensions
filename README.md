@@ -2,12 +2,12 @@
 
 The official integrations and plugins for [Tomtly](https://github.com/drax98/Tomtly), one folder each. Tomtly installs a
 folder straight from here: on the **Integrations** or **Plugins** page choose **Add**, then **From a GitHub repo**, and
-give this repository, the folder and a version tag, such as `tuya` at `tuya-v1.2.3`. Its settings, keys and credential
+give this repository, the folder and a version tag, such as `tuya` at `tuya-v1.2.4`. Its settings, keys and credential
 files included, are filled in there and kept encrypted in Tomtly's database.
 
 | Folder | What | Latest |
 |---|---|---|
-| [`tuya`](tuya) (Smart Life) | Tuya Zigbee and Wi-Fi devices, LAN port 6668, protocols 3.1 to 3.5 | `tuya-v1.2.3` |
+| [`tuya`](tuya) (Smart Life) | Tuya Zigbee and Wi-Fi devices, LAN port 6668, protocols 3.1 to 3.5 | `tuya-v1.2.4` |
 | [`xiaomi`](xiaomi) (Xiaomi Home) | Wi-Fi MIoT devices from their spec, older Yeelight, Philips, Zhimi, Chuangmi, Aqara gateway models, Roborock vacuums; miIO over UDP | `xiaomi-v1.3.4` |
 | [`gree`](gree) | Gree-based ACs such as Sinclair and EWPE Smart, UDP port 7000 | `gree-v1.3.0` |
 | [`weather`](weather) | A plugin: weather and forecast from Open-Meteo | `weather-v1.1.1` |

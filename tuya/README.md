@@ -7,7 +7,7 @@ Wi-Fi device. Device ids are `tuya:<Tuya id>`.
 ## Install
 
 On Tomtly's **Integrations** or **Plugins** page choose **Add**, then **From a GitHub repo**, and give the repository `drax98/tomtly-extensions`, the folder `tuya` and
-the version `tuya-v1.2.3`. Then fill in its settings there. Pin a tag: the code you
+the version `tuya-v1.2.4`. Then fill in its settings there. Pin a tag: the code you
 install can't change unless you change it.
 
 `devices` comes from the [tinytuya](https://github.com/jasonacox/tinytuya) wizard, which holds every device's local key.
@@ -129,6 +129,7 @@ gateway with the same local key, which is how the wizard itself guesses. Failing
 
 ## Notes
 
+- A thermostat that reports the target range set on it (data points 113 and 114, as TS0601 ones do) gets that range on `temp_set`, so sliders span what it accepts and follow a change made on the device.
 - A value's `code` comes from the cloud mapping, with known mistakes corrected. A repeated code gets `_<data point>` added, and a missing one is `dp_<data point>`.
 - A command sent while the link is down throws, rather than waiting for it to come back.
 
