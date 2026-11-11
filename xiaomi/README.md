@@ -8,7 +8,7 @@ model offers, see [Access](#access).
 ## Install
 
 On Tomtly's **Integrations** or **Plugins** page choose **Add**, then **From a GitHub repo**, and give the repository `drax98/tomtly-extensions`, the folder `xiaomi` and
-the version `xiaomi-v1.3.2`. Or list it in `config.json`, as under **Settings** below. Pin a tag: the code you install can't change unless
+the version `xiaomi-v1.3.3`. Or list it in `config.json`, as under **Settings** below. Pin a tag: the code you install can't change unless
 you change it.
 
 `devices` comes from [Xiaomi-cloud-tokens-extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) and
@@ -128,7 +128,7 @@ With no internet, a model already saved works as usual, and a new one shows as w
 | `devices` | A path inside your config folder, like `secrets/xiaomi.json`: the output of [Xiaomi-cloud-tokens-extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). It holds every device's token. |
 
 ```json
-{ "source": "github:drax98/tomtly-extensions/xiaomi@xiaomi-v1.3.2", "settings": { "devices": "secrets/xiaomi.json" } }
+{ "source": "github:drax98/tomtly-extensions/xiaomi@xiaomi-v1.3.3", "settings": { "devices": "secrets/xiaomi.json" } }
 ```
 
 Scripts see a device as `xiaomi:<did>`, so its id survives an address change.

@@ -168,8 +168,8 @@ const ANYWHERE: Record<string, string> = {
 /** The codes the page and shared scripts already understand, see Tomtly's docs/devices.md. The hand tables use these too. */
 function alias(kind: string, main: boolean, name: string): string | undefined {
   if (name === "on") return main ? "power" : undefined;
-  if (kind === "vacuum" && main) return { status: "state", mode: "fan_speed", fault: "error_code" }[name];
-  if (kind === "cover") return { "motor-control": "control", "target-position": "percent_control", "current-position": "percent_state" }[name];
+  if (kind === "vacuum" && main) return { status: "state", mode: "fan_speed", fault: "error_code" }[name] ?? ANYWHERE[name];
+  if (kind === "cover") return { "motor-control": "control", "target-position": "percent_control", "current-position": "percent_state" }[name] ?? ANYWHERE[name];
   if (kind === "climate" && (name === "temperature" || name === "target-temperature")) return name === "temperature" ? "temp_current" : "temp_set";
   return ANYWHERE[name];
 }

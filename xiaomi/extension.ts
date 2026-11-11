@@ -310,7 +310,7 @@ function fit(ctx: Ctx, devices: ExtensionDevice[]): ExtensionDevice[] {
 defineExtension({
   id: "xiaomi",
   name: "Xiaomi Home",
-  version: "1.3.2",
+  version: "1.3.3",
   license: "MIT",
   description: "Any Xiaomi or Roborock device paired in Mi Home, reached directly on your network. The first time it sees a model, it asks Xiaomi's public miot-spec.org for that model's description.",
   categories: ["cleaning", "climate", "lighting", "sensors"],

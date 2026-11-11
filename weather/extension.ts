@@ -7,7 +7,7 @@ const round = (n: number) => Math.round(n * 10) / 10;
 defineExtension({
   id: "weather",
   name: "Weather",
-  version: "1.1.0",
+  version: "1.1.1",
   license: "MIT",
   description: "Current conditions and a two-day hourly forecast from Open-Meteo (CC BY 4.0).",
   categories: ["weather"],
@@ -35,6 +35,7 @@ defineExtension({
       const { current, hourly } = response.json();
       // Rather a visible failure than a script heating the house on a temperature that was never reported.
       if (typeof current?.temperature_2m !== "number") throw new Error("Open-Meteo sent no current temperature");
+      if (!Array.isArray(hourly?.time)) throw new Error("Open-Meteo sent no hourly forecast");
 
       const hours: WeatherHour[] = [];
       hourly.time.forEach((time: number, i: number) => {

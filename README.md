@@ -7,16 +7,16 @@ give this repository, the folder and a version tag. Or list it in `config.json`:
 ```json
 "extensions": [
   { "source": "github:drax98/tomtly-extensions/tuya@tuya-v1.2.2", "settings": { "devices": "secrets/tuya.json", "hosts": "<gateway id>=192.168.1.10@3.4" } },
-  { "source": "github:drax98/tomtly-extensions/weather@weather-v1.1.0", "settings": { "latitude": 52.23, "longitude": 21.01 } }
+  { "source": "github:drax98/tomtly-extensions/weather@weather-v1.1.1", "settings": { "latitude": 52.23, "longitude": 21.01 } }
 ]
 ```
 
 | Folder | What | Latest |
 |---|---|---|
 | [`tuya`](tuya) (Smart Life) | Tuya Zigbee and Wi-Fi devices, LAN port 6668, protocols 3.1 to 3.5 | `tuya-v1.2.2` |
-| [`xiaomi`](xiaomi) (Xiaomi Home) | Wi-Fi MIoT devices from their spec, older Yeelight, Philips, Zhimi, Chuangmi, Aqara gateway models, Roborock vacuums; miIO over UDP | `xiaomi-v1.3.2` |
+| [`xiaomi`](xiaomi) (Xiaomi Home) | Wi-Fi MIoT devices from their spec, older Yeelight, Philips, Zhimi, Chuangmi, Aqara gateway models, Roborock vacuums; miIO over UDP | `xiaomi-v1.3.3` |
 | [`gree`](gree) | Gree-based ACs such as Sinclair and EWPE Smart, UDP port 7000 | `gree-v1.3.0` |
-| [`weather`](weather) | A plugin: weather and forecast from Open-Meteo | `weather-v1.1.0` |
+| [`weather`](weather) | A plugin: weather and forecast from Open-Meteo | `weather-v1.1.1` |
 
 Each folder's README says how to get its credentials, what it was tested against, and what it asks access for. Pin a
 tag: what you install can't change unless you change the tag.

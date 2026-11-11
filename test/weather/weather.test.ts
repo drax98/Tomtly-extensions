@@ -80,4 +80,11 @@ describe("weather", () => {
     const host = makeHost({ settings, fetch: () => ({ body: { hourly: { time: [], temperature_2m: [], precipitation_probability: [] } } }) });
     expect(() => def.data.fetch(host.ctx)).toThrow("Open-Meteo sent no current temperature");
   });
+
+  it("says so in words when the hourly forecast is missing", async () => {
+    const def = await load();
+    const { current } = sample();
+    const host = makeHost({ settings, fetch: () => ({ body: { current } }) });
+    expect(() => def.data.fetch(host.ctx)).toThrow("Open-Meteo sent no hourly forecast");
+  });
 });
