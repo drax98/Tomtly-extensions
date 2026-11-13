@@ -50,6 +50,19 @@ let knownMac = "";
 let failingSince = 0;
 let lastSweep = 0;
 
+// Where the unit was last found, saved so a restart goes straight there instead of failing at the setting for a minute.
+// Kept with the setting it was found from, so changing the setting by hand wins.
+const MOVED_KEY = "moved";
+
+/** The address to talk to: where the unit was found, else the setting. */
+function target(ctx: Ctx): string {
+  if (address === "") {
+    const saved = ctx.storage.get(MOVED_KEY) as { from?: unknown; to?: unknown } | undefined;
+    if (saved?.from === ctx.settings.host && typeof saved.to === "string") address = saved.to;
+  }
+  return address || ctx.settings.host;
+}
+
 // A DHCP change is worth looking for only once it isn't a blip, and a look can't run constantly.
 const SWEEP_AFTER_MS = 60_000;
 const SWEEP_EVERY_MS = 5 * 60_000;
@@ -57,7 +70,7 @@ const SWEEP_EVERY_MS = 5 * 60_000;
 type Ctx = ExtensionContext<typeof settings>;
 
 const settings = {
-  host: { label: "Air conditioner address", type: "string", required: true, help: "Its IP address, without a port. Reserve it on your router so it doesn't change." },
+  host: { label: "Air conditioner address", type: "string", required: true, help: "Its IP address, without a port. If it changes, the unit is looked for on the same network and found again by its MAC." },
   name: { label: "Name", type: "string", default: "Air conditioner" },
   mac: { label: "MAC address", type: "string", help: "Optional, like aabbccddeeff. Lets the unit be found again after an address change without guessing." },
 } as const;
@@ -71,7 +84,7 @@ function ask(ctx: Ctx, request: object, tries: number, timeoutMs: number): any {
   const data = ctx.crypto.hex(JSON.stringify(request));
   for (let i = 1; ; i++) {
     try {
-      return JSON.parse(ctx.crypto.text(ctx.udp.request(address || ctx.settings.host, PORT, data, { timeoutMs })));
+      return JSON.parse(ctx.crypto.text(ctx.udp.request(target(ctx), PORT, data, { timeoutMs })));
     } catch (e) {
       if (!isTimeout(e) || i >= tries) throw e;
     }
@@ -164,7 +177,7 @@ function rediscover(ctx: Ctx): boolean {
   const now = Date.now();
   if (failingSince === 0) failingSince = now;
   if (now - failingSince < SWEEP_AFTER_MS || now - lastSweep < SWEEP_EVERY_MS) return false;
-  const current = address || ctx.settings.host;
+  const current = target(ctx);
   const match = /^(\d+\.\d+\.\d+)\.(\d+)$/.exec(current);
   if (!match || !/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(current)) return false;
   lastSweep = now;
@@ -181,6 +194,7 @@ function rediscover(ctx: Ctx): boolean {
   }
   ctx.log(`the air conditioner moved from ${current} to ${unit.host}`);
   address = unit.host;
+  ctx.storage.set(MOVED_KEY, { from: ctx.settings.host, to: unit.host });
   session = null;
   return true;
 }
@@ -208,12 +222,12 @@ function boolOf(raw: Record<string, number>, col: string): boolean | null {
 defineExtension({
   id: "gree",
   name: "Gree",
-  version: "1.3.0",
+  version: "1.3.1",
   license: "MIT",
   description: "Gree-based air conditioners (Gree, Sinclair, EWPE Smart) over the local network.",
   categories: ["climate"],
   tags: ["Gree", "Sinclair", "EWPE Smart", "air conditioner", "AC", "heat pump"],
-  access: { network: ["{host}"], lan: true, sockets: true },
+  access: { network: ["{host}"], lan: true, sockets: true, storage: true },
   settings,
   devices: {
     everySeconds: 10,
@@ -251,7 +265,7 @@ defineExtension({
       return [{ id: s.mac, name: ctx.settings.name, kind: "climate", product: "Gree-based AC", values }];
     },
     discover(ctx) {
-      const current = address || ctx.settings.host;
+      const current = target(ctx);
       const match = /^(\d+\.\d+\.\d+)\.\d+$/.exec(current);
       if (!match || !/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(current)) throw new Error("its address isn't on a private network, so there's nothing to look through");
       const hosts: string[] = [];

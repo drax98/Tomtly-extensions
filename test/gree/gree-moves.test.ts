@@ -23,6 +23,37 @@ describe("gree: finding a moved unit", () => {
     expect(host.udpRequests.at(-1)?.host).toBe("192.168.1.77");
   });
 
+  it("remembers the new address, so a restart goes straight there without a minute of failures", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(1_000_000);
+    const unit = new Unit(ADDRESS);
+    const first = network([unit], { mac: MAC });
+    const before = await load();
+    before.devices.poll(first.ctx);
+    unit.address = "192.168.1.77";
+    expect(() => before.devices.poll(first.ctx)).toThrow(TIMEOUT);
+    vi.setSystemTime(1_000_000 + 61_000);
+    before.devices.poll(first.ctx);
+
+    const after = await load();                                       // a restart: nothing kept in memory
+    const second = network([unit], { mac: MAC });
+    for (const [k, v] of first.storage) second.storage.set(k, v);
+    expect(after.devices.poll(second.ctx)[0].id).toBe(MAC);
+    expect(second.udpRequests.every((r) => r.host === "192.168.1.77")).toBe(true);
+    expect(second.udpScans).toHaveLength(0);
+  });
+
+  it("lets an address set by hand win over the one it found", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(1_000_000);
+    const unit = new Unit("192.168.1.80");
+    const host = network([unit], { host: "192.168.1.80", mac: MAC });
+    host.storage.set("moved", { from: ADDRESS, to: "192.168.1.77" }); // found back when the setting was the old one
+    const def = await load();
+    expect(def.devices.poll(host.ctx)[0].id).toBe(MAC);
+    expect(host.udpRequests.every((r) => r.host === "192.168.1.80")).toBe(true);
+  });
+
   it("takes the only unit it finds when no MAC is known", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(1_000_000);

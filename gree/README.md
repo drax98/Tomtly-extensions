@@ -34,12 +34,13 @@ second AC, copy this folder and change its `id`.
 - `sockets`: the protocol is UDP.
 - `lan`: only to look for the unit on its /24 after it has been unreachable for a minute, see below. There is no broadcast
   discovery, so you give the address.
+- `storage`: the address the unit was found at after a move, so a restart goes straight there.
 
 ## Settings
 
 | | |
 |---|---|
-| `host` | The unit's IP address, without a port. Reserve it on your router. Find it in your router's client list. |
+| `host` | The unit's IP address, without a port. Find it in your router's client list. If it changes, the unit is found again (below). |
 | `mac` | Optional, like `aabbccddeeff`. The unit's MAC address, so it can be found again after an address change without guessing. |
 | `name` | Shown on the card. "Air conditioner" by default. |
 
@@ -50,7 +51,7 @@ The device id is `gree:<mac>`, so it survives an address change.
 After a minute of failures, and at most every 5 minutes, it sends the scan message to the other addresses of the /24 of
 the last private address, at once with `ctx.udp.scan`, and moves to the unit whose MAC matches `mac` (or the one it learned
 at its first connection). Without any known MAC, a single unit answering is assumed to be this one and a warning says so;
-several answering means nothing moves. Set `mac` to avoid the guess. The new address is kept in memory only.
+several answering means nothing moves. Set `mac` to avoid the guess. The new address is saved, so a restart goes straight there; changing `host` by hand wins over it.
 
 ## Notes
 
