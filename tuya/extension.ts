@@ -9,6 +9,7 @@ import { COLOUR_PARTS, colourMax, formatColour, parseColour } from "./colour";
 import { BAD_AUTH, CMD_HEARTBEAT, control, decode, dpsOf, hasSessionKey, negotiate, newSession, nextFrame, proveByRead, sendCommand, statusRead, type Frame, type Session } from "./protocol";
 import { cleanMapping, type Mapping } from "./rules";
 import { valuesOf, writable, readable, declare, colourPoint, deviceRange } from "./values";
+import { withHysenPoints, isHysen, PROGRAM_POINTS, programOf, programText, programWrite, type DayType } from "./hysen";
 
 const PORT = 6668;
 const DIAL_MS = 2000;
@@ -56,6 +57,7 @@ interface RawDevice {
   gateway_id?: string; // the same, from an older wizard
   ip?: string;
   version?: string;
+  model?: string;
   mapping: Record<string, Mapping>;
 }
 
@@ -276,7 +278,41 @@ function handleFrame(ctx: Ctx, link: Link, s: Session, frame: Frame): void {
   }
   current[id] = { ...current[id], ...dps };
   online[id] = true;
+  rememberProgram(ctx, id, dps);
   ctx.refreshDevices();
+}
+
+// A Hysen's program, as it last sent it: it sends it only when it changes, so a restart would otherwise forget it.
+const PROGRAMS_KEY = "programs";
+const ALL_PROGRAM_POINTS: string[] = [...PROGRAM_POINTS.workday, ...PROGRAM_POINTS.weekend];
+const savedPrograms = (ctx: Ctx): Record<string, Record<string, unknown>> => (ctx.storage.get(PROGRAMS_KEY) as Record<string, Record<string, unknown>> | undefined) ?? {};
+
+function rememberProgram(ctx: Ctx, id: string, dps: Record<string, unknown>): void {
+  const sent: Record<string, unknown> = {};
+  for (const dp of ALL_PROGRAM_POINTS) if (dp in dps) sent[dp] = dps[dp];
+  if (Object.keys(sent).length === 0) return;
+  const all = savedPrograms(ctx);
+  ctx.storage.set(PROGRAMS_KEY, { ...all, [id]: { ...all[id], ...sent } });
+}
+
+/** A Hysen's two programs as read-only text values, "06:00 21°, …", or nothing for any other device. */
+function programValues(d: RawDevice): DeviceValue[] {
+  if (!isHysen(d.model)) return [];
+  return (Object.keys(PROGRAM_POINTS) as DayType[]).map((day) => ({ code: `program_${day}`, type: "String", value: programText(programOf(current[d.id], day)) }));
+}
+
+/** Writes a Hysen's program for one or both day types. Sends nothing unless every period given is valid. */
+function setProgram(ctx: Ctx, args: any): void {
+  start(ctx);
+  const d = devices.find((x) => x.id === args?.device);
+  const link = d === undefined ? undefined : linkOf[d.id];
+  if (d === undefined || link === undefined) throw new Error(`unknown device ${args?.device}`);
+  if (!isHysen(d.model)) throw new Error(`${d.name} isn't a thermostat with a program`);
+  const days = (Object.keys(PROGRAM_POINTS) as DayType[]).filter((day) => args[day] !== undefined);
+  if (days.length === 0) throw new Error("give a workday or weekend program");
+  const dps = Object.assign({}, ...days.map((day) => programWrite(day, args[day])));
+  if (link.session === null || !link.up) throw new Error(`${d.name} isn't connected`);
+  sendCommand(ctx, link.session, control(link.version, link.root.id, link.nodeOf[d.id], dps));
 }
 
 function serve(ctx: Ctx, link: Link, s: Session): void {
@@ -337,8 +373,10 @@ function start(ctx: Ctx): Link[] {
   if (!Array.isArray(parsed)) throw new Error("the devices file must hold a list of devices");
   const all: RawDevice[] = parsed.filter((d) => d !== null && typeof d === "object" && typeof d.id === "string" && d.id !== "").map((d) => {
     const category = typeof d.category === "string" ? d.category : "";
-    return { ...d, category, name: d.name || d.product_name || d.id, mapping: cleanMapping(category, d.mapping) };
+    const mapping = cleanMapping(category, d.mapping);
+    return { ...d, category, name: d.name || d.product_name || d.id, mapping: isHysen(d.model) ? withHysenPoints(mapping) : mapping };
   });
+  for (const [id, points] of Object.entries(savedPrograms(ctx))) current[id] = { ...points, ...current[id] };
   const made: Link[] = [];
   for (const part of ctx.settings.hosts.split(",")) {
     const entry = part.trim();
@@ -395,7 +433,7 @@ function colourWrite(d: RawDevice, code: string, value: number): Record<string, 
 defineExtension({
   id: "tuya",
   name: "Smart Life",
-  version: "1.2.5",
+  version: "1.3.0",
   license: "MIT",
   description: "Tuya Zigbee and Wi-Fi devices paired in Smart Life or Tuya Smart, reached directly on your network.",
   categories: ["climate", "lighting", "energy", "sensors", "security"],
@@ -435,7 +473,7 @@ defineExtension({
         kind: kindOf(d.category),
         product: d.product_name,
         online: online[d.id] === true,
-        values: deviceRange(d.category, [...Object.keys(d.mapping).sort().map((dp) => declare(d, d.mapping[dp], current[d.id]?.[dp])), ...colourValues(d)], current[d.id]),
+        values: deviceRange(d.category, [...Object.keys(d.mapping).sort().map((dp) => declare(d, d.mapping[dp], current[d.id]?.[dp])), ...colourValues(d), ...programValues(d)], current[d.id]),
       }));
     },
     discover,
@@ -463,5 +501,9 @@ defineExtension({
       // So a saturation written straight after a hue builds on the new hue, not the colour the light last reported.
       if (COLOUR_PARTS[code] !== undefined) current[deviceId] = { ...current[deviceId], ...dps };
     },
+  },
+  actions: {
+    /** home.plugin("tuya").action("setProgram", { device, workday?, weekend? }), each six { time: "HH:MM", temp } periods. */
+    setProgram,
   },
 });

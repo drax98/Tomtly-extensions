@@ -242,6 +242,8 @@ interface DeviceValue {
   unit?: string;
   /** How to display an Integer: 205 with scale 1 reads as 20.5. */
   scale?: number;
+  /** A setting rarely changed, such as a calibration: the device screen folds it away under the everyday values. */
+  advanced?: boolean;
 }
 
 interface ExtensionDevice {

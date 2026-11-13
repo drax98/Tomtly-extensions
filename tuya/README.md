@@ -93,6 +93,24 @@ The cloud mapping has no read/write flag, so `rules.ts` goes by what Tuya docume
 - **Colour:** `colour_data` reads as words like `hue 220, saturation 100%, brightness 50%`, and `colour_hue`, `colour_saturation` and `colour_brightness` are writable numbers. A write goes out in the form the light last sent (JSON or hex) and turns on colour mode. They can't be written until the light has reported a colour, because its form isn't known before that.
 - **Battery sensors** have no value until they report, and show offline until then, including after this service restarts. One that reported before comes back when its gateway does. Values are never invented.
 
+## Hysen HY08WE thermostats
+
+Their cloud mapping lists only on/off, target and temperature. A device whose `model` in the devices file starts with
+`HY08` also gets, by Zigbee2MQTT's `hy_thermostat` data points and checked on real HY08WE units:
+
+- `mode`: `Manual` or `Program`. The device also enters `TempProg` by itself (a temporary override after the target
+  changes in Program, until the next period) and `Holiday`; both show, and neither can be chosen.
+- `child_lock`.
+- Advanced: `temp_correction` (calibration, tenths of a °C), `hysteresis` (tenths), `lower_temp` and `upper_temp` (the
+  target's range, whole °C; `temp_set`'s slider follows them), and, read-only, `power_on`, `week_format`, `sensor` and
+  `floor_limit`. The sensor and the floor limit stay read-only on purpose: a sensor that isn't wired, or a wrong limit,
+  stops the heating or risks the floor.
+- `program_workday` and `program_weekend`, as text such as `06:00 21°, 08:00 18°, …`: six periods each of a start time
+  and a whole °C. The device sends its program only when it changes, so it's unknown until then, and remembered across
+  restarts in the extension's saved data.
+- An action, `home.plugin("tuya").action("setProgram", { device, workday, weekend })`, with `device` the id without
+  `tuya:` and each day type six `{ time: "HH:MM", temp }` periods in order. Nothing is sent unless every period is valid.
+
 ## Not supported
 
 - **Commands through `Json`, `String` or `Raw`:** scene and music data, IR codes (`wnykq`, `ir_send`), lock commands. The service has no writable text value. Scenes built into a light can be chosen with `work_mode`.

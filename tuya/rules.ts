@@ -7,6 +7,10 @@ export interface Mapping {
   code: string;
   type: string;
   values?: unknown;
+  /** Folded under the everyday values on the device screen. */
+  advanced?: boolean;
+  /** Never written, whatever its code would allow. */
+  readOnly?: boolean;
 }
 
 // Whole categories that only report. Locks and safes are here on purpose: remote unlocking needs a cloud ticket anyway, and

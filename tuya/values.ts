@@ -15,7 +15,7 @@ export function valuesOf(m: Mapping): Record<string, any> {
 
 /** The cloud mapping has no read/write flag, and is sometimes for another firmware: never write a type the device isn't using. */
 export function writable(d: Mapped, m: Mapping, value: unknown): boolean {
-  if (!codeWritable(d.category, m.code)) return false;
+  if (m.readOnly || !codeWritable(d.category, m.code)) return false;
   const unknown = value === undefined || value === null;
   if (m.type === "Boolean") return unknown || typeof value === "boolean";
   if (m.type === "Enum") return Array.isArray(valuesOf(m).range) && (unknown || typeof value === "string");
@@ -34,14 +34,14 @@ export function readable(m: Mapping, values: Record<string, any>, value: unknown
 }
 
 /**
- * Thermostats like this home's report the target range set on the device itself, data points 113 (lowest) and 114
+ * Thermostats like this home's report the target range set on the device itself, data points 115 (lowest) and 114
  * (highest) in whole degrees, though the cloud mapping leaves both out. temp_set takes that range, so a slider spans
  * what the thermostat accepts and follows a change made on it. Without both, or with a range past the declared one,
- * temp_set stays as declared.
- * shortcut: 113/114 are this thermostat family's numbers (TS0601); check another wk model's points before trusting them.
+ * temp_set stays as declared. (113 is the floor's low-temperature protection, not the target's lowest.)
+ * shortcut: 115/114 are Hysen HY08WE's numbers (Zigbee2MQTT's hy_thermostat); check another wk model's points before trusting them.
  */
 export function deviceRange(category: string, values: DeviceValue[], reported: Record<string, unknown> | undefined): DeviceValue[] {
-  const lo = reported?.["113"], hi = reported?.["114"];
+  const lo = reported?.["115"], hi = reported?.["114"];
   if (category !== "wk" || !Number.isInteger(lo) || !Number.isInteger(hi) || (lo as number) >= (hi as number)) return values;
   return values.map((v) => {
     if (v.code !== "temp_set" || v.type !== "Integer") return v;
@@ -59,7 +59,7 @@ export function declare(d: Mapped, m: Mapping, value: unknown): DeviceValue {
   const base = typeof unit === "string" && unit !== "" ? { unit } : {};
   if (m.type !== "Boolean" && m.type !== "Enum" && m.type !== "Integer") {
     const text = known === null ? null : readable(m, values, known);
-    return { code: m.code, type: "String", value: text, ...base };
+    return { code: m.code, type: "String", value: text, ...base, ...(m.advanced ? { advanced: true } : {}) };
   }
   // Thermostats declare c_f as an Enum but send a boolean; every one reads °C while it's false.
   const shown = m.type === "Enum" && typeof known === "boolean" && Array.isArray(values.range) && values.range.length === 2 ? values.range[known ? 1 : 0] : known;
@@ -70,6 +70,7 @@ export function declare(d: Mapped, m: Mapping, value: unknown): DeviceValue {
   if (typeof values.step === "number") out.step = values.step;
   const scale = scaleOf(d.category, m.code, values);
   if (scale !== undefined) out.scale = scale;
+  if (m.advanced) out.advanced = true;
   return out;
 }
 
