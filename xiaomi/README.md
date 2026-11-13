@@ -114,7 +114,7 @@ Each has a card that says so, unless noted:
 - `lan`: any private address, because each device's address comes from your devices file, and to look for a device that moved.
 - `sockets`: the protocol is UDP.
 - `network: miot-spec.org`: the description of a model it has no table for, once per model and version. **That request names the model, so Xiaomi's public spec server can see which models you own, from your address.** Tokens, device ids, names and addresses never go there. Models with a table make no request. If your home has only those, nothing is sent at all.
-- `storage`: keeps the part of each description it needs, so a restart with no internet still knows the model. It stays under 900 KiB of the 1 MiB allowed, dropping the oldest model first, which is then asked for again after a restart.
+- `storage`: keeps the address a moved device was found at, and the part of each description it needs, so a restart with no internet still knows the model. It stays under 900 KiB of the 1 MiB allowed, dropping the oldest model first, which is then asked for again after a restart.
 
 Why not a list bundled with the extension? About 15,000 released models at a median 3.5 KB is far over a package's 4 MiB, and it would go stale. And it doesn't read the site's list of all models, which at 6.9 MB is over the 4 MiB a fetch may return: the devices file's `spec_type` already says which one to ask for.
 
@@ -136,7 +136,7 @@ Scripts see a device as `xiaomi:<did>`, so its id survives an address change.
 - Polling stays under 400 of the 600 operations a minute the service allows, with a share of about 67 in each poll, and each call is two. Past that a big home is read in turns, so each device is read less often and none is left out. About 30 single-call devices fit in every poll.
 - One device's turn is at most 8 seconds and one poll's share, and a very long list goes on from there next time.
 - A device first gets one property, which proves the token and that it speaks MIoT, and then up to 15 in a call. If it stops answering long lists, or refuses them, the calls get shorter until it does. That size is only kept in memory.
-- A device that fails for a minute is looked for on the /24 of its last private address, at most every 5 minutes. A new address is adopted only when the id there matches and a read that needs the token succeeds. Nothing is written. The new address is kept in memory, so after a restart the old one is tried first.
+- A device that fails for a minute is looked for on the /24 of its last private address, at most every 5 minutes. A new address is adopted only when the id there matches and a read that needs the token succeeds. Nothing is written. The new address is saved, so a restart goes straight there; a new address in the devices file wins over it.
 - A command is sent again once if its reply is lost, as UDP can lose a packet. A refusal is never repeated, and an action never is.
 - The list of devices may not pass 1 MiB. It takes over 100 devices with the longest specs to get near, and past 900 KiB the longest give up their values and say so.
 - Tokens never leave as they are: the service refuses any payload holding one, and any value returning one.

@@ -83,7 +83,7 @@ function load(ctx: Ctx): Entry[] {
           props: table ? table.props : roborock ? roborockPropsFor(model) : [], roborock,
           driver: table ? "table" : roborock ? "roborock" : urn ? "spec" : family ? "legacy" : "none", urn, note: "",
           batch: MIOT_BATCH, answered: false, resume: 0, hidden: new Set(), strikes: new Map(),
-          ip: d.localip ?? "", key: { token: "", aes: "", iv: "" },
+          ip: movedTo(ctx, did, d.localip ?? ""), from: d.localip ?? "", key: { token: "", aes: "", iv: "" },
           // Devices drop a repeated id, so a restart must not start counting from the same number.
           nextId: parseInt(ctx.crypto.random(4), 16) % (1 << 30),
           values: {}, online: false, everTried: false, nextTry: 0, failingSince: 0, lastSweep: 0,
@@ -165,6 +165,17 @@ function discover(ctx: Ctx): FoundDevice[] {
   return out;
 }
 
+// Where each device was last found, by its id, saved so a restart goes straight there.
+const MOVED_KEY = "moved";
+type Moves = Record<string, { from: string; to: string }>;
+const savedMoves = (ctx: Ctx): Moves => (ctx.storage.get(MOVED_KEY) as Moves | undefined) ?? {};
+
+/** Where to find a device: where it was last found, while the devices file still has the address it was found from. */
+function movedTo(ctx: Ctx, id: string, from: string): string {
+  const moved = savedMoves(ctx)[id];
+  return moved?.from === from ? moved.to : from;
+}
+
 /** Whether to look for the device now. Counts the sweep if so. */
 function maySweep(e: Entry, now: number): boolean {
   if (e.failingSince === 0) e.failingSince = now;
@@ -175,9 +186,8 @@ function maySweep(e: Entry, now: number): boolean {
 
 /**
  * Looks for the device on its /24 and adopts an address only when the id there matches and a read that needs the token
- * succeeds, because the id in a header is public and anyone can copy it. Never writes.
- * shortcut: the address is only kept in memory, so after a restart the old one is tried first; persist it with
- * access.storage if restarts with stale addresses become annoying.
+ * succeeds, because the id in a header is public and anyone can copy it. Never writes. The new address is saved, so a
+ * restart goes straight there.
  */
 function find(ctx: Ctx, e: Entry): Record<string, Value> | null {
   // miIO's header holds a uint32, so any other did can't be recognised.
@@ -191,6 +201,7 @@ function find(ctx: Ctx, e: Entry): Record<string, Value> | null {
       const values = read(ctx, e, answer.from);
       ctx.log(`${e.name} found at a new address: ${e.ip} is now ${answer.from}`);
       e.ip = answer.from;
+      ctx.storage.set(MOVED_KEY, { ...savedMoves(ctx), [e.id]: { from: e.from, to: answer.from } });
       return values;
     } catch {
       // not this one
@@ -310,7 +321,7 @@ function fit(ctx: Ctx, devices: ExtensionDevice[]): ExtensionDevice[] {
 defineExtension({
   id: "xiaomi",
   name: "Xiaomi Home",
-  version: "1.3.4",
+  version: "1.3.5",
   license: "MIT",
   description: "Any Xiaomi or Roborock device paired in Mi Home, reached directly on your network. The first time it sees a model, it asks Xiaomi's public miot-spec.org for that model's description.",
   categories: ["cleaning", "climate", "lighting", "sensors"],

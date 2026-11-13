@@ -39,6 +39,7 @@ export interface Entry {
   hidden: Set<string>; // properties it said it doesn't have
   strikes: Map<string, number>;
   ip: string;
+  from: string; // the address in the devices file; a saved move applies only while it's unchanged
   key: { token: string; aes: string; iv: string };
   nextId: number;
   values: Record<string, Value>; // by prop code; stays while the device is offline, so scripts keep the last reading

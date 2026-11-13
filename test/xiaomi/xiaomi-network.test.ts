@@ -78,6 +78,25 @@ describe("xiaomi: the addresses and ids in the devices file", () => {
 
     expect(card.online).toBe(true);
     expect(host.logs).toContain("Desk lamp found at a new address: 192.168.1.60 is now 192.168.1.77");
+    expect(host.storage.get("moved")).toEqual({ "1234567": { from: IP, to: "192.168.1.77" } });
+  });
+
+  it("goes straight to a saved new address after a restart, unless the devices file has a new one", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(1_000_000);
+    const lamp = new Miio("192.168.1.77", 1234567, properties(LAMP_VALUES));
+    const host = network([lamp], { settings: { devices: devicesFile(device()) } });
+    host.storage.set("moved", { "1234567": { from: IP, to: "192.168.1.77" } });
+    const def = await load();
+    expect(def.devices.poll(host.ctx)[0].online).toBe(true);
+    expect(host.udpScans).toHaveLength(0);
+
+    const edited = new Miio("192.168.1.90", 1234567, properties(LAMP_VALUES));
+    const fresh = network([edited], { settings: { devices: devicesFile(device({ localip: "192.168.1.90" })) } });
+    fresh.storage.set("moved", { "1234567": { from: IP, to: "192.168.1.77" } }); // saved before the file changed
+    const again = await load();
+    expect(again.devices.poll(fresh.ctx)[0].online).toBe(true);
+    expect(fresh.udpScans).toHaveLength(0);
   });
 
   it("gives a turn to each device in turn, and leaves the rest when a turn has used its thirty seconds", async () => {
