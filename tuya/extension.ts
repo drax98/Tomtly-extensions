@@ -40,7 +40,7 @@ function spendExtraRead(): boolean {
 }
 const settings = {
   devices: { label: "Devices file", type: "file", required: true, secretFields: ["key"], help: "The devices.json that `python -m tinytuya wizard` writes. It holds every device's local key, and is kept encrypted." },
-  hosts: { label: "Hosts", type: "string", required: true, help: "<device id>=<ip>@<version>, separated by commas, version 3.1 to 3.5. `python -m tinytuya scan` lists all three. A gateway carries its Zigbee and Bluetooth mesh devices. The ip and version may be left out if the devices file has them." },
+  hosts: { label: "Hosts", type: "string", required: true, help: "<device id>=<ip>@<version>, separated by commas, version 3.1 to 3.5. `python -m tinytuya scan` lists all three. A gateway carries its Zigbee and Bluetooth mesh devices. The ip and version may be left out if the devices file has them. A device that changes address is looked for on the same network and found again." },
 } as const;
 
 type Ctx = ExtensionContext<typeof settings>;
@@ -67,6 +67,7 @@ interface Link {
   device22: boolean;
   up: boolean; // the peer proved it holds the key on this connection
   host: string;
+  from: string; // the address hosts or the devices file gives; a saved move applies only while it's unchanged
   session: Session | null;
   byCid: Record<string, string>;
   nodeOf: Record<string, string>;
@@ -123,8 +124,11 @@ function probe(ctx: Ctx, link: Link, ip: string): boolean {
   }
 }
 
-// shortcut: the new address is only kept in memory, so after a restart the old one is tried first and the sweep repeats
-// after the wait; keep it in ctx.storage if restarts with stale addresses become annoying.
+// Where each link's device was last found, by its id, saved so a restart goes straight there.
+const MOVED_KEY = "moved";
+type Moves = Record<string, { from: string; to: string }>;
+const savedMoves = (ctx: Ctx): Moves => (ctx.storage.get(MOVED_KEY) as Moves | undefined) ?? {};
+
 function rediscover(ctx: Ctx, link: Link): void {
   // shortcut: 3.1 answers reads in plain text, so nothing there could prove who it is; it stays at its address, and hosts is how to move it.
   if (link.version === "3.1") return;
@@ -137,6 +141,7 @@ function rediscover(ctx: Ctx, link: Link): void {
     if (probe(ctx, link, ip)) {
       ctx.log(`${link.root.name} found at a new address, ${ip}, was ${link.host}`);
       link.host = ip;
+      ctx.storage.set(MOVED_KEY, { ...savedMoves(ctx), [link.root.id]: { from: link.from, to: ip } });
       return;
     }
   }
@@ -343,11 +348,13 @@ function start(ctx: Ctx): Link[] {
     const id = match[1].trim();
     const root = all.find((d) => d.id === id);
     if (root === undefined) throw new Error(`host ${id} is not in the devices file`);
-    const host = match[2]?.trim() || root.ip;
+    const from = match[2]?.trim() || root.ip;
     const version = match[3]?.trim() || root.version;
-    if (!host || !version) throw new Error(`host ${id} needs an address and a version, and the devices file has none`);
+    if (!from || !version) throw new Error(`host ${id} needs an address and a version, and the devices file has none`);
+    const moved = savedMoves(ctx)[id];
+    const host = moved?.from === from ? moved.to : from; // an address changed by hand wins over a saved move
     if (!/^3\.[1-5]$/.test(version)) throw new Error(`protocol ${version} is not supported, only 3.1 to 3.5`);
-    const link: Link = { root, children: [], ids: [id], version, device22: version === "3.2", up: false, host, session: null, byCid: {}, nodeOf: {}, pending: [], heard: 0, nextBeat: 0, nextDial: 0, failingSince: 0, lastSweep: 0 };
+    const link: Link = { root, children: [], ids: [id], version, device22: version === "3.2", up: false, host, from, session: null, byCid: {}, nodeOf: {}, pending: [], heard: 0, nextBeat: 0, nextDial: 0, failingSince: 0, lastSweep: 0 };
     // shortcut: over MAX_LINKS the rest show as offline, since the host has no more connections; Wi-Fi devices past that need the service-bridge route.
     if (made.length >= MAX_LINKS) {
       link.nextDial = Infinity;
@@ -388,13 +395,13 @@ function colourWrite(d: RawDevice, code: string, value: number): Record<string, 
 defineExtension({
   id: "tuya",
   name: "Smart Life",
-  version: "1.2.4",
+  version: "1.2.5",
   license: "MIT",
   description: "Tuya Zigbee and Wi-Fi devices paired in Smart Life or Tuya Smart, reached directly on your network.",
   categories: ["climate", "lighting", "energy", "sensors", "security"],
   tags: ["Tuya", "Smart Life", "Tuya Smart", "Zigbee", "plug", "thermostat", "bulb", "sensor"],
   // lan, because device addresses come from a list, and to look for a device that moved.
-  access: { lan: true, sockets: true },
+  access: { lan: true, sockets: true, storage: true },
   settings,
   background: {
     everySeconds: 1,

@@ -105,6 +105,7 @@ The cloud mapping has no read/write flag, so `rules.ts` goes by what Tuya docume
 ## Access
 
 - `lan`: device addresses come from your list, and a device that moved is looked for on its /24.
+- `storage`: the address a moved device was found at, so a restart goes straight there. Changing its address in `hosts` or the devices file wins over it.
 - `sockets`: the protocol is TCP on port 6668.
 - It also reads the file you choose for **Devices file**.
 

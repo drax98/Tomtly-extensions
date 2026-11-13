@@ -239,6 +239,27 @@ describe("tuya: removed devices and the link limit", () => {
 });
 
 describe("tuya: a device that moved address", () => {
+  it("remembers the new address, so after a restart it connects there straight away", async () => {
+    const moved = new TuyaDevice("192.168.1.77", { version: "3.3", dps: { "": { "1": true } } });
+    const host = network([moved], settingsFor(file(device()), `plug=${IP}@3.3`), { tcpScan: () => [] });
+    host.storage.set("moved", { plug: { from: IP, to: "192.168.1.77" } });
+    const def = await load();
+    run(def, host, 2);
+    expect(def.devices.poll(host.ctx)[0]).toMatchObject({ online: true });
+    expect(host.tcpScans).toHaveLength(0);
+    expect(host.connections.every((c) => c.host === "192.168.1.77")).toBe(true);
+  });
+
+  it("lets an address changed by hand win over a saved move", async () => {
+    const here = new TuyaDevice("192.168.1.60", { version: "3.3", dps: { "": { "1": true } } });
+    const host = network([here], settingsFor(file(device()), "plug=192.168.1.60@3.3"), { tcpScan: () => [] });
+    host.storage.set("moved", { plug: { from: IP, to: "192.168.1.77" } });
+    const def = await load();
+    run(def, host, 2);
+    expect(def.devices.poll(host.ctx)[0]).toMatchObject({ online: true });
+    expect(host.connections.every((c) => c.host === "192.168.1.60")).toBe(true);
+  });
+
   it("is found again by probing its network, after a minute of failures, and then connects there", async () => {
     const def = await load();
     const moved = new TuyaDevice("192.168.1.77", { version: "3.3", dps: { "": { "1": true } } });
@@ -254,6 +275,7 @@ describe("tuya: a device that moved address", () => {
     run(def, host, 2);
 
     expect(host.logs).toContain("Plug found at a new address, 192.168.1.77, was 192.168.1.50");
+    expect(host.storage.get("moved")).toEqual({ plug: { from: IP, to: "192.168.1.77" } });
     expect(host.tcpScans).toHaveLength(1);
     expect(host.tcpScans[0].hosts).not.toContain(IP);
     expect(moved.peers.length).toBeGreaterThan(0);
