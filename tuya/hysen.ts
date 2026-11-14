@@ -14,9 +14,11 @@ export const HYSEN_POINTS: Record<string, Mapping> = {
   "110": { code: "hysteresis", type: "Integer", values: { min: 5, max: 30, step: 5, scale: 1, unit: "°C" }, advanced: true },
   "115": { code: "lower_temp", type: "Integer", values: { min: 5, max: 30, step: 1, unit: "°C" }, advanced: true },
   "114": { code: "upper_temp", type: "Integer", values: { min: 10, max: 35, step: 1, unit: "°C" }, advanced: true },
-  // shortcut: read-only until each one's other values are seen on the device; "keep", "in" and "0days"/"2days" so far.
+  // How many days a week run the weekend program: 0 (every day the workday one), 1 (6 + 1) or 2 (5 + 2). Checked on a
+  // real HY08WE: it takes these three and refuses anything else.
+  "118": { code: "weekend_days", type: "Enum", values: { range: ["0days", "1days", "2days"] }, advanced: true },
+  // shortcut: read-only until its other values are seen on the device; only "keep" so far.
   "117": { code: "power_on", type: "String", advanced: true },
-  "118": { code: "week_format", type: "String", advanced: true },
   // Read-only on purpose: a sensor that isn't wired, or a wrong floor limit, stops the heating or risks the floor.
   "116": { code: "sensor", type: "String", advanced: true },
   "112": { code: "floor_limit", type: "Integer", values: { unit: "°C" }, readOnly: true, advanced: true },

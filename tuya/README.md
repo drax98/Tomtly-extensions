@@ -102,8 +102,8 @@ Their cloud mapping lists only on/off, target and temperature. A device whose `m
   changes in Program, until the next period) and `Holiday`; both show, and neither can be chosen.
 - `child_lock`.
 - Advanced: `temp_correction` (calibration, tenths of a °C), `hysteresis` (tenths), `lower_temp` and `upper_temp` (the
-  target's range, whole °C; `temp_set`'s slider follows them), and, read-only, `power_on`, `week_format`, `sensor` and
-  `floor_limit`. The sensor and the floor limit stay read-only on purpose: a sensor that isn't wired, or a wrong limit,
+  target's range, whole °C; `temp_set`'s slider follows them), `weekend_days` (how many days run the weekend program:
+  `0days`, `1days` or `2days`), and, read-only, `power_on`, `sensor` and `floor_limit`. The sensor and the floor limit stay read-only on purpose: a sensor that isn't wired, or a wrong limit,
   stops the heating or risks the floor.
 - `program_workday` and `program_weekend`, as text such as `06:00 21°, 08:00 18°, …`: six periods each of a start time
   and a whole °C. The device sends its program only when it changes, so it's unknown until then, and remembered across

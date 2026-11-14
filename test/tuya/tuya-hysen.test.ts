@@ -73,6 +73,7 @@ describe("tuya hysen: a HY08WE behind a gateway", () => {
     expect(v.upper_temp).toMatchObject({ writable: true, value: 30, advanced: true });
     expect(v.floor_limit).toMatchObject({ writable: false, value: 45, advanced: true });
     expect(v.sensor).toMatchObject({ type: "String", value: "in", advanced: true });
+    expect(v.weekend_days).toMatchObject({ type: "Enum", writable: true, value: "0days", range: ["0days", "1days", "2days"], advanced: true });
     expect(v.temp_set).toMatchObject({ min: 90, max: 300 }); // the slider spans 115 to 114
     expect(v.program_workday).toMatchObject({ type: "String", value: null });
   });

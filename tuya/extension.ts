@@ -433,7 +433,7 @@ function colourWrite(d: RawDevice, code: string, value: number): Record<string, 
 defineExtension({
   id: "tuya",
   name: "Smart Life",
-  version: "1.3.0",
+  version: "1.3.1",
   license: "MIT",
   description: "Tuya Zigbee and Wi-Fi devices paired in Smart Life or Tuya Smart, reached directly on your network.",
   categories: ["climate", "lighting", "energy", "sensors", "security"],
