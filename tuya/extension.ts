@@ -298,7 +298,8 @@ function rememberProgram(ctx: Ctx, id: string, dps: Record<string, unknown>): vo
 /** A Hysen's two programs as read-only text values, "06:00 21°, …", or nothing for any other device. */
 function programValues(d: RawDevice): DeviceValue[] {
   if (!isHysen(d.model)) return [];
-  return (Object.keys(PROGRAM_POINTS) as DayType[]).map((day) => ({ code: `program_${day}`, type: "String", value: programText(programOf(current[d.id], day)) }));
+  // Advanced: long text that a script's program dialog shows better, as rooms.ts does on the device's page.
+  return (Object.keys(PROGRAM_POINTS) as DayType[]).map((day) => ({ code: `program_${day}`, type: "String", value: programText(programOf(current[d.id], day)), advanced: true }));
 }
 
 /** Writes a Hysen's program for one or both day types. Sends nothing unless every period given is valid. */
@@ -433,7 +434,7 @@ function colourWrite(d: RawDevice, code: string, value: number): Record<string, 
 defineExtension({
   id: "tuya",
   name: "Smart Life",
-  version: "1.3.1",
+  version: "1.3.2",
   license: "MIT",
   description: "Tuya Zigbee and Wi-Fi devices paired in Smart Life or Tuya Smart, reached directly on your network.",
   categories: ["climate", "lighting", "energy", "sensors", "security"],

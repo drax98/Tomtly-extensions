@@ -75,7 +75,7 @@ describe("tuya hysen: a HY08WE behind a gateway", () => {
     expect(v.sensor).toMatchObject({ type: "String", value: "in", advanced: true });
     expect(v.weekend_days).toMatchObject({ type: "Enum", writable: true, value: "0days", range: ["0days", "1days", "2days"], advanced: true });
     expect(v.temp_set).toMatchObject({ min: 90, max: 300 }); // the slider spans 115 to 114
-    expect(v.program_workday).toMatchObject({ type: "String", value: null });
+    expect(v.program_workday).toMatchObject({ type: "String", value: null, advanced: true });
   });
 
   it("keeps showing a mode it entered by itself, and can still be switched", async () => {
