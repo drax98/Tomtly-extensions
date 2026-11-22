@@ -153,4 +153,4 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-export const ALL_COLS = ["Pow", "Mod", "SetTem", "WdSpd", "Quiet", "Tur", "Lig", "Buzzer_ON_OFF", "TemSen", "SwUpDn", "SwingLfRig", "Air", "Blo", "Health", "SwhSlp", "StHt", "SvSt"];
+export const ALL_COLS = ["Pow", "Mod", "SetTem", "WdSpd", "Quiet", "Tur", "Lig", "Buzzer_ON_OFF", "TemSen", "SwUpDn", "SwingLfRig", "Air", "Blo", "Health", "SwhSlp", "StHt", "SvSt", "Defrost", "OutEnvTem", "InEvaTem"];

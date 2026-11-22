@@ -8,6 +8,8 @@ the GCM scheme. It uses the `climate` kind and the codes the page's climate card
 `fan_speed` is a name (`auto`, `low`, ... `high`). The unit's other columns appear when it reports them: `swing_vertical`,
 `swing_horizontal`, `fresh_air`, `x_fan`, `health`, `sleep`, `frost_protection` and `energy_saving`. Units often answer 0 for a
 feature they don't have, so one of these showing doesn't prove the unit has it.
+Read only, under Advanced settings, when the unit reports them: `defrost` (true while it thaws the outdoor coil),
+`outdoor_temp` and `coil_temp` (°C, its outdoor air and indoor coil sensors), for working out how well it heats.
 
 ## Install
 

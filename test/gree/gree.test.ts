@@ -187,3 +187,23 @@ describe("gree: reading the unit", () => {
     expect(removed.udpRequests).toHaveLength(0);
   });
 });
+
+describe("gree: heating readings", () => {
+  it("shows defrost and the outdoor and coil temperatures read only, under Advanced, and never writes them", async () => {
+    const def = await load();
+    const unit = new Unit(ADDRESS, MAC, { state: { Defrost: 1, OutEnvTem: 38, InEvaTem: 70 } });
+    const host = network([unit]);
+    const values = valuesByCode(def.devices.poll(host.ctx)[0]);
+    expect(values.defrost).toEqual({ code: "defrost", type: "Boolean", value: true, advanced: true });
+    expect(values.outdoor_temp).toEqual({ code: "outdoor_temp", type: "Integer", value: -2, unit: "°C", advanced: true });
+    expect(values.coil_temp).toEqual({ code: "coil_temp", type: "Integer", value: 30, unit: "°C", advanced: true });
+    expect(() => def.devices.write!(host.ctx, MAC, "defrost", false)).toThrow(/no value called defrost/);
+  });
+
+  it("leaves them out on a unit that doesn't report them", async () => {
+    const def = await load();
+    const values = valuesByCode(def.devices.poll(network([new Unit(ADDRESS, MAC)]).ctx)[0]);
+    expect(values.defrost).toBeUndefined();
+    expect(values.outdoor_temp).toBeUndefined();
+  });
+});

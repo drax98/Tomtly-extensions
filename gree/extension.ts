@@ -39,6 +39,10 @@ const FIELDS = [
   ...SWITCHES,
 ];
 
+// Read only, for working out how well the unit heats: shown under Advanced settings, never written (write looks in FIELDS).
+// Defrost is 1 while the outdoor coil is being thawed; the temperatures are its outdoor air and indoor coil sensors.
+const READINGS = ["Defrost", "OutEnvTem", "InEvaTem"];
+
 interface Session {
   mac: string;
   key: string; // the unit's own key, from bind. Only ever held in memory.
@@ -144,7 +148,7 @@ function connect(ctx: Ctx): Session {
 }
 
 function status(ctx: Ctx, s: Session): Record<string, number> {
-  const cols = FIELDS.map((f) => f.col);
+  const cols = [...FIELDS.map((f) => f.col), ...READINGS];
   const reply = exchange(ctx, s, { t: "status", mac: s.mac, cols }, 0, 3, 1500);
   if (reply.t !== "dat" || !Array.isArray(reply.cols) || !Array.isArray(reply.dat) || reply.cols.length !== reply.dat.length) {
     throw new Error(`the air conditioner sent an unexpected status reply (${reply.t})`);
@@ -215,6 +219,13 @@ function nameOf(raw: Record<string, number>, col: string, names: string[]): stri
   return col in raw ? names[raw[col]] ?? String(raw[col]) : null;
 }
 
+// Units report 0 when they have no reading, and most add 40 to the Celsius value. The room sensor is read either way;
+// outdoor air and the coil go below 0 °C, where only the +40 makes sense (38 is −2 °C), so offset says it always applies.
+function celsius(raw: Record<string, number>, col: string, offset = false): number | null {
+  const v = raw[col];
+  return v === undefined || v === 0 ? null : offset || v >= 40 ? v - 40 : v;
+}
+
 function boolOf(raw: Record<string, number>, col: string): boolean | null {
   return col in raw ? raw[col] !== 0 : null;
 }
@@ -222,7 +233,7 @@ function boolOf(raw: Record<string, number>, col: string): boolean | null {
 defineExtension({
   id: "gree",
   name: "Gree",
-  version: "1.3.1",
+  version: "1.3.2",
   license: "MIT",
   description: "Gree-based air conditioners (Gree, Sinclair, EWPE Smart) over the local network.",
   categories: ["climate"],
@@ -243,8 +254,7 @@ defineExtension({
       }
       failingSince = 0;
       const { s, raw } = reading;
-      // Units report 0 when they have no reading, and most add 40 to the Celsius value.
-      const sensor = raw.TemSen === undefined || raw.TemSen === 0 ? null : raw.TemSen >= 40 ? raw.TemSen - 40 : raw.TemSen;
+      const sensor = celsius(raw, "TemSen");
       const values: DeviceValue[] = [
         { code: "power", type: "Boolean", writable: true, value: boolOf(raw, "Pow") },
         { code: "mode", type: "Enum", writable: true, value: nameOf(raw, "Mod", MODES), range: MODES },
@@ -262,6 +272,9 @@ defineExtension({
       for (const { col, code } of SWITCHES) {
         if (col in raw) values.push({ code, type: "Boolean", writable: true, value: boolOf(raw, col) });
       }
+      if ("Defrost" in raw) values.push({ code: "defrost", type: "Boolean", value: boolOf(raw, "Defrost"), advanced: true });
+      if ("OutEnvTem" in raw) values.push({ code: "outdoor_temp", type: "Integer", value: celsius(raw, "OutEnvTem", true), unit: "°C", advanced: true });
+      if ("InEvaTem" in raw) values.push({ code: "coil_temp", type: "Integer", value: celsius(raw, "InEvaTem", true), unit: "°C", advanced: true });
       return [{ id: s.mac, name: ctx.settings.name, kind: "climate", product: "Gree-based AC", values }];
     },
     discover(ctx) {
